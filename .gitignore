@@ -9,11 +9,17 @@ venv/
 ENV/
 .venv/
 
-# PyTorch Checkpoints & Large Files
+# Heavy Binary MRI / NIfTI Files & Datasets
+*.nii
+*.nii.gz
+data/synthetic/
+
+# PyTorch Checkpoints & Models
 *.pt
 *.pth
 *.bin
 *.onnx
+models/*.pt
 
 # Outputs & Temporary files
 scratch/
