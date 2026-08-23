@@ -1,0 +1,16 @@
+{
+  "num_features": 54,
+  "smote_applied": true,
+  "classification": {
+    "accuracy": 94.21686746987952,
+    "balanced_accuracy": 94.8607901397601,
+    "macro_f1": 0.9347598070065031,
+    "roc_auc": 0.9884683330322077
+  },
+  "regression": {
+    "mae": 0.0796545999582748,
+    "rmse": 0.15496591357812678,
+    "r2": 0.994570369245918,
+    "pearson_r": 0.9972968367586021
+  }
+}

@@ -1,0 +1,25 @@
+# Tabular 1D-CNN Configuration for train_data.csv
+
+data:
+  data_path: "data/train_data.csv"
+  target: "phenotype"       # "phenotype" (3-class: HC, RRMS, Progressive) or "group" (2-class: HC, MS)
+  test_size: 0.15
+  val_size: 0.15
+  batch_size: 32
+  num_workers: 0
+  use_balanced_sampler: true
+
+model:
+  embed_dim: 256
+  dropout: 0.25
+  num_heads: 4
+
+training:
+  epochs: 50
+  lr: 0.001
+  weight_decay: 1e-4
+  use_focal_loss: true
+  focal_gamma: 2.0
+  early_stopping_patience: 12
+  seed: 42
+  save_dir: "outputs/tabular_1dcnn"

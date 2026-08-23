@@ -1,0 +1,185 @@
+# ============================================================
+# MSNet — Demo Config (CPU / Synthetic Data)
+# Designed for a quick end-to-end dry-run.
+# ============================================================
+
+experiment:
+  name: "msnet_demo_synthetic"
+  version: "demo"
+  seed: 42
+  output_dir: "outputs/demo/"
+  log_dir: "logs/demo/"
+  use_wandb: false        # <-- off for demo
+
+data:
+  root_dir: "data/synthetic/"
+  csv_path: "data/metadata.csv"
+
+  modalities:
+    - "T1"
+    - "T2"
+    - "FLAIR"
+    - "GD_T1"
+
+  clinical_features:
+    - "age"
+    - "gender"
+    - "edss"
+    - "disease_duration"
+    - "igg_index"
+    - "oligoclonal_bands"
+    - "t_cell_count"
+
+  task: "multiclass"
+  num_classes: 4
+  class_names: ["HC", "RRMS", "SPMS", "PPMS"]
+
+  train_split: 0.70
+  val_split:   0.15
+  test_split:  0.15
+  stratify: true
+
+  spatial_size: [64, 64, 64]   # small = fast on CPU
+  voxel_spacing: [1.0, 1.0, 1.0]
+  normalize_intensity: true
+  skull_strip: false            # skip for synthetic data
+  register_to_mni: false        # skip for synthetic data
+
+  augmentation:
+    random_flip_prob: 0.5
+    random_rotate_prob: 0.3
+    random_scale_prob: 0.2
+    random_noise_prob: 0.2
+    random_bias_field_prob: 0.1
+    elastic_deform_prob: 0.0    # skip slow elastic for demo
+
+  modality_dropout:
+    enabled: true
+    dropout_prob: 0.2
+
+  batch_size: 2                 # small batch for CPU RAM
+  num_workers: 0                # 0 = main process only (Windows safe)
+  pin_memory: false
+  prefetch_factor: 2
+
+model:
+  name: "MSNet"
+  encoder_type: "resnet3d"      # faster than swin on CPU
+
+  swin:
+    img_size: [64, 64, 64]
+    in_channels: 1
+    feature_size: 12
+    depths: [1, 1, 1, 1]
+    num_heads: [3, 3, 3, 3]
+    window_size: 4
+    drop_rate: 0.0
+    attn_drop_rate: 0.0
+    dropout_path_rate: 0.0
+    use_checkpoint: false
+
+  cnn:
+    backbone: "resnet50_3d"
+    pretrained: false
+    in_channels: 1
+    out_channels: [16, 32, 64, 128]
+    dropout: 0.2
+
+  clinical:
+    input_dim: 7
+    hidden_dims: [32, 64, 32]
+    dropout: 0.2
+    out_dim: 64
+
+  fusion:
+    type: "cross_modal_attention"
+    embed_dim: 128
+    num_heads: 4
+    num_layers: 1
+    dropout: 0.1
+    use_positional_encoding: true
+
+  projection:
+    out_dim: 128
+    use_batchnorm: true
+
+  classifier:
+    hidden_dims: [128, 64]
+    dropout: 0.3
+    use_label_smoothing: true
+    label_smoothing: 0.1
+
+  uncertainty:
+    enabled: true
+    method: "mc_dropout"
+    mc_samples: 5
+    dropout_rate: 0.3
+
+training:
+  epochs: 5                     # short demo run
+
+  optimizer: "adamw"
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  betas: [0.9, 0.999]
+  gradient_clip_norm: 1.0
+
+  scheduler: "cosine_warmup"
+  warmup_epochs: 1
+  min_lr: 1.0e-6
+
+  loss:
+    type: "focal_cross_entropy"
+    focal_gamma: 2.0
+    focal_alpha: null
+    use_class_weights: false    # false for balanced synthetic data
+
+  use_amp: false                # no CUDA → no AMP
+  amp_dtype: "float32"
+
+  grad_accum_steps: 1
+
+  early_stopping:
+    enabled: true
+    patience: 5
+    monitor: "val/auroc"
+    mode: "max"
+    min_delta: 0.001
+
+  save_top_k: 1
+  checkpoint_metric: "val/auroc"
+
+evaluation:
+  metrics:
+    - "accuracy"
+    - "sensitivity"
+    - "specificity"
+    - "f1_score"
+    - "roc_auc"
+    - "pr_auc"
+    - "cohen_kappa"
+    - "matthews_corrcoef"
+
+  bootstrap:
+    enabled: true
+    n_bootstraps: 50             # few bootstraps for demo speed
+    confidence_level: 0.95
+
+  threshold_optimization:
+    enabled: false
+    method: "youden_j"
+
+explainability:
+  gradcam:
+    enabled: false              # skip for demo
+    target_layer: "encoder.layers[-1]"
+    output_dir: "outputs/demo/gradcam/"
+    save_overlays: true
+    colormap: "jet"
+    alpha: 0.5
+
+hardware:
+  device: "cpu"
+  num_gpus: 0
+  distributed: false
+  compile_model: false

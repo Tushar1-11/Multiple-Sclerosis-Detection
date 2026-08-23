@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSNet — Multiple Sclerosis AI Diagnostics & EDSS Explorer</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js for visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <div class="logo-container">
+      <div class="logo-icon">🧠</div>
+      <div>
+        <h1 class="logo-title">MSNet Diagnostic Portal</h1>
+        <p class="logo-subtitle">Multimodal Medical AI & Neuroimaging Volumetrics</p>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <div class="status-badge" id="server-status">
+        <span class="status-dot"></span>
+        <span id="status-text">Connecting to PyTorch Engine...</span>
+      </div>
+      <button class="btn btn-secondary" id="tab-simulator-btn">⚡ Custom Patient Simulator</button>
+    </div>
+  </header>
+
+  <div class="app-container">
+
+    <!-- Overview Metrics Banner -->
+    <section class="metrics-banner">
+      <div class="metric-card">
+        <div class="metric-icon">👥</div>
+        <div>
+          <div class="metric-value">1,659</div>
+          <div class="metric-label">Real Patient Records (`train_data.csv`)</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon">🎯</div>
+        <div>
+          <div class="metric-value" id="model-acc-val">98.43%</div>
+          <div class="metric-label">1D-CNN Classification Accuracy</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon">📈</div>
+        <div>
+          <div class="metric-value">0.9986</div>
+          <div class="metric-label">Full Dataset ROC-AUC Score</div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon">⚕️</div>
+        <div>
+          <div class="metric-value">EDSS 0.0 - 6.5</div>
+          <div class="metric-label">Disability Scale Spectrum</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Workspace Layout (Sidebar + Main Panel) -->
+    <main class="main-workspace">
+
+      <!-- Left Sidebar: Patient Search & List -->
+      <aside class="sidebar-panel">
+        <div class="panel-header">
+          <h2>Real Patient Explorer</h2>
+          <span class="badge" id="patient-count-badge">Loading...</span>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="search-box">
+          <input type="text" id="patient-search-input" placeholder="Search Patient Hash ID..." />
+        </div>
+
+        <div class="filter-pills">
+          <button class="pill active" data-filter="all">All (1659)</button>
+          <button class="pill" data-filter="0">Healthy</button>
+          <button class="pill" data-filter="1">RRMS</button>
+          <button class="pill" data-filter="2">Progressive</button>
+        </div>
+
+        <!-- Scrollable Patient Cards List -->
+        <div class="patient-list" id="patient-list-container">
+          <div class="loading-spinner">Loading real patient dataset...</div>
+        </div>
+      </aside>
+
+      <!-- Right Panel: Patient Profile & AI Diagnostic Dashboard -->
+      <section class="dashboard-panel">
+
+        <!-- Patient Header Card -->
+        <div class="glass-card patient-main-card" id="patient-main-card">
+          <div class="card-header-flex">
+            <div>
+              <div class="patient-hash-tag" id="display-patient-hash">Select a patient record to view details</div>
+              <h2 class="patient-title" id="display-patient-title">Patient Profile</h2>
+            </div>
+            <div id="display-subtype-badge" class="badge badge-lg">Select Patient</div>
+          </div>
+
+          <div class="demographics-grid">
+            <div class="demo-item">
+              <span class="demo-label">Age</span>
+              <span class="demo-val" id="display-age">--</span>
+            </div>
+            <div class="demo-item">
+              <span class="demo-label">Sex</span>
+              <span class="demo-val" id="display-sex">--</span>
+            </div>
+            <div class="demo-item">
+              <span class="demo-label">Disease Duration</span>
+              <span class="demo-val" id="display-duration">--</span>
+            </div>
+            <div class="demo-item">
+              <span class="demo-label">T2 Lesion Volume</span>
+              <span class="demo-val" id="display-t2lv">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two-Column Diagnostic Breakdown -->
+        <div class="grid-2col">
+
+          <!-- EDSS & Clinical Status Card -->
+          <div class="glass-card">
+            <div class="card-title">
+              <span class="title-icon">🩺</span> EDSS Disability Status
+            </div>
+
+            <div class="edss-display-box">
+              <div class="edss-score" id="display-edss-score">--</div>
+              <div class="edss-info">
+                <div class="edss-tier" id="display-edss-tier">EDSS Status</div>
+                <p class="edss-desc" id="display-edss-desc">Expanded Disability Status Scale (EDSS) measures neurological impairment in MS patients.</p>
+              </div>
+            </div>
+
+            <!-- Visual EDSS Meter (0.0 to 10.0) -->
+            <div class="edss-meter-container">
+              <div class="meter-labels">
+                <span>0.0 (Normal)</span>
+                <span>3.0 (Moderate)</span>
+                <span>6.0 (Walking Aid)</span>
+                <span>10.0</span>
+              </div>
+              <div class="meter-track">
+                <div class="meter-fill" id="edss-meter-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PyTorch 1D-CNN Live Diagnostic Prediction -->
+          <div class="glass-card">
+            <div class="card-title">
+              <span class="title-icon">🤖</span> AI Model Diagnostic Prediction
+            </div>
+
+            <div class="ai-prediction-banner">
+              <div>
+                <div class="ai-pred-label">Predicted Subtype</div>
+                <div class="ai-pred-value" id="ai-pred-result">Waiting for Inference...</div>
+              </div>
+              <div class="confidence-badge" id="ai-confidence">-- %</div>
+            </div>
+
+            <!-- Probability Distribution Bars -->
+            <div class="prob-bars-container">
+              <div class="prob-row">
+                <div class="prob-label">Healthy Control</div>
+                <div class="prob-bar-track">
+                  <div class="prob-bar-fill fill-hc" id="bar-hc" style="width: 0%;"></div>
+                </div>
+                <div class="prob-pct" id="pct-hc">0%</div>
+              </div>
+
+              <div class="prob-row">
+                <div class="prob-label">RRMS</div>
+                <div class="prob-bar-track">
+                  <div class="prob-bar-fill fill-rrms" id="bar-rrms" style="width: 0%;"></div>
+                </div>
+                <div class="prob-pct" id="pct-rrms">0%</div>
+              </div>
+
+              <div class="prob-row">
+                <div class="prob-label">Progressive MS</div>
+                <div class="prob-bar-track">
+                  <div class="prob-bar-fill fill-prog" id="bar-prog" style="width: 0%;"></div>
+                </div>
+                <div class="prob-pct" id="pct-prog">0%</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Volumetric Biomarkers Analysis Chart -->
+        <div class="glass-card">
+          <div class="card-title">
+            <span class="title-icon">📊</span> Brain Volumetric Biomarkers (`train_data.csv`)
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="volumetricChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Model Saliency Feature Importance -->
+        <div class="glass-card">
+          <div class="card-title">
+            <span class="title-icon">🔬</span> Model Decision Attribution (Gradient Feature Saliency)
+          </div>
+          <div class="saliency-grid" id="saliency-container">
+            <div class="text-muted">Run prediction to view feature importances...</div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+  </div>
+
+  <!-- Custom Patient Simulator Modal -->
+  <div class="modal-overlay" id="simulator-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>⚡ Custom Patient AI Simulator</h2>
+        <button class="close-btn" id="close-modal-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="simulator-form" class="sim-form-grid">
+          <div class="form-group">
+            <label>Age (Years)</label>
+            <input type="number" id="sim-age" value="45" min="15" max="80" />
+          </div>
+
+          <div class="form-group">
+            <label>SEX</label>
+            <select id="sim-sex">
+              <option value="1">Male</option>
+              <option value="0">Female</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>EDSS Score (0.0 - 10.0)</label>
+            <input type="number" id="sim-edss" value="2.0" step="0.5" min="0" max="10" />
+          </div>
+
+          <div class="form-group">
+            <label>Disease Duration (Years)</label>
+            <input type="number" id="sim-duration" value="8.5" step="0.1" min="0" max="40" />
+          </div>
+
+          <div class="form-group">
+            <label>T2 Lesion Volume (mm³)</label>
+            <input type="number" id="sim-t2lv" value="4500" min="0" max="60000" />
+          </div>
+
+          <div class="form-group">
+            <label>Cortical Gray Matter (ml)</label>
+            <input type="number" id="sim-grey" value="610" min="400" max="800" />
+          </div>
+
+          <div class="form-group">
+            <label>White Matter (ml)</label>
+            <input type="number" id="sim-white" value="700" min="500" max="850" />
+          </div>
+
+          <div class="form-group">
+            <label>Thalamus Volume (ml)</label>
+            <input type="number" id="sim-thalamus" value="20" min="10" max="30" />
+          </div>
+
+          <div class="form-group span-full">
+            <button type="button" class="btn btn-primary btn-block" id="run-sim-btn">Run AI Model Inference</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

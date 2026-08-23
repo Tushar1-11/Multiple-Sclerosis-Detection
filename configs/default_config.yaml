@@ -1,0 +1,238 @@
+# ============================================================
+# MSNet Default Configuration
+# Optimized for IEEE TMI / MICCAI publication standards
+# ============================================================
+
+# ----------------------------------------------------------
+# Experiment Identity
+# ----------------------------------------------------------
+experiment:
+  name: "msnet_multimodal_ms_detection"
+  version: "v1.0.0"
+  seed: 42
+  output_dir: "outputs/"
+  log_dir: "logs/"
+  use_wandb: true
+  wandb_project: "msnet-ms-detection"
+  wandb_entity: null  # Set your W&B username
+
+# ----------------------------------------------------------
+# Dataset Configuration
+# ----------------------------------------------------------
+data:
+  root_dir: "data/processed/"
+  csv_path: "data/metadata.csv"
+  
+  # MRI modalities — supports missing modality dropout
+  modalities:
+    - "T1"
+    - "T2"
+    - "FLAIR"
+    - "GD_T1"
+  
+  # Clinical features (must match CSV column names)
+  clinical_features:
+    - "age"
+    - "gender"           # 0=female, 1=male
+    - "edss"             # Expanded Disability Status Scale (0.0–10.0)
+    - "disease_duration" # in years
+    - "igg_index"        # IgG index biomarker
+    - "oligoclonal_bands" # 0/1
+    - "t_cell_count"     # CD4+ T-cell count
+  
+  # Classification mode: "binary" or "multiclass"
+  task: "multiclass"
+  
+  # Class mapping
+  # binary: {0: "HC", 1: "MS"}
+  # multiclass: {0: "HC", 1: "RRMS", 2: "SPMS", 3: "PPMS"}
+  num_classes: 4
+  class_names: ["HC", "RRMS", "SPMS", "PPMS"]
+  
+  # Data splits
+  train_split: 0.70
+  val_split: 0.15
+  test_split: 0.15
+  stratify: true        # Stratified split by class
+
+  # Preprocessing
+  spatial_size: [128, 128, 128]  # Resampled voxel dimensions
+  voxel_spacing: [1.0, 1.0, 1.0] # mm isotropic
+  normalize_intensity: true
+  skull_strip: true
+  register_to_mni: true
+
+  # Augmentation (applied during training only)
+  augmentation:
+    random_flip_prob: 0.5
+    random_rotate_prob: 0.3
+    random_scale_prob: 0.2
+    random_noise_prob: 0.2
+    random_bias_field_prob: 0.1
+    elastic_deform_prob: 0.1
+
+  # Modality dropout (simulates missing scans at training)
+  modality_dropout:
+    enabled: true
+    dropout_prob: 0.2   # Probability of dropping any single modality
+
+  # DataLoader
+  batch_size: 4
+  num_workers: 4
+  pin_memory: true
+  prefetch_factor: 2
+
+# ----------------------------------------------------------
+# Model Architecture
+# ----------------------------------------------------------
+model:
+  name: "MSNet"
+  
+  # MRI encoder: "swin_transformer" or "resnet3d"
+  encoder_type: "swin_transformer"
+  
+  # Swin Transformer encoder config
+  swin:
+    img_size: [128, 128, 128]
+    in_channels: 1             # Per modality (grayscale MRI)
+    feature_size: 48
+    depths: [2, 2, 6, 2]
+    num_heads: [3, 6, 12, 24]
+    window_size: 7
+    drop_rate: 0.0
+    attn_drop_rate: 0.0
+    dropout_path_rate: 0.1
+    use_checkpoint: true       # Gradient checkpointing for memory
+  
+  # 3D CNN fallback encoder
+  cnn:
+    backbone: "resnet50_3d"
+    pretrained: false
+    in_channels: 1
+    out_channels: [64, 128, 256, 512]
+    dropout: 0.2
+  
+  # Clinical encoder (MLP)
+  clinical:
+    input_dim: 7              # Must match len(clinical_features)
+    hidden_dims: [64, 128, 64]
+    dropout: 0.3
+    out_dim: 128
+  
+  # Cross-modal attention fusion
+  fusion:
+    type: "cross_modal_attention" # "concat" | "cross_modal_attention" | "product"
+    embed_dim: 512
+    num_heads: 8
+    num_layers: 2
+    dropout: 0.1
+    use_positional_encoding: true
+  
+  # Modality-specific projection heads
+  projection:
+    out_dim: 256
+    use_batchnorm: true
+  
+  # Classification head
+  classifier:
+    hidden_dims: [512, 256]
+    dropout: 0.4
+    use_label_smoothing: true
+    label_smoothing: 0.1
+  
+  # Uncertainty estimation
+  uncertainty:
+    enabled: true
+    method: "mc_dropout"     # "mc_dropout" | "deep_ensemble" | "evidential"
+    mc_samples: 20            # Monte Carlo forward passes
+    dropout_rate: 0.3
+
+# ----------------------------------------------------------
+# Training Configuration
+# ----------------------------------------------------------
+training:
+  epochs: 150
+  
+  # Optimizer
+  optimizer: "adamw"
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  betas: [0.9, 0.999]
+  gradient_clip_norm: 1.0
+  
+  # Learning rate scheduler
+  scheduler: "cosine_warmup"
+  warmup_epochs: 10
+  min_lr: 1.0e-6
+  
+  # Loss function
+  loss:
+    type: "focal_cross_entropy"  # "cross_entropy" | "focal" | "focal_cross_entropy"
+    focal_gamma: 2.0
+    focal_alpha: null            # Set list [0.25, 0.75] for class weighting
+    use_class_weights: true      # Computed from training set distribution
+  
+  # Mixed precision
+  use_amp: true
+  amp_dtype: "float16"           # "float16" | "bfloat16"
+  
+  # Gradient accumulation (effective batch = batch_size * grad_accum_steps)
+  grad_accum_steps: 2
+  
+  # Early stopping
+  early_stopping:
+    enabled: true
+    patience: 20
+    monitor: "val/auroc"
+    mode: "max"
+    min_delta: 0.001
+  
+  # Checkpointing
+  save_top_k: 3
+  checkpoint_metric: "val/auroc"
+
+# ----------------------------------------------------------
+# Evaluation Configuration
+# ----------------------------------------------------------
+evaluation:
+  metrics:
+    - "accuracy"
+    - "sensitivity"    # = recall for positive class
+    - "specificity"
+    - "f1_score"
+    - "roc_auc"
+    - "pr_auc"
+    - "cohen_kappa"
+    - "matthews_corrcoef"
+  
+  # Bootstrap confidence intervals
+  bootstrap:
+    enabled: true
+    n_bootstraps: 1000
+    confidence_level: 0.95
+  
+  # Threshold optimization (binary case)
+  threshold_optimization:
+    enabled: true
+    method: "youden_j"  # "youden_j" | "f1" | "precision_recall"
+
+# ----------------------------------------------------------
+# Explainability
+# ----------------------------------------------------------
+explainability:
+  gradcam:
+    enabled: true
+    target_layer: "encoder.layers[-1]"
+    output_dir: "outputs/gradcam/"
+    save_overlays: true
+    colormap: "jet"
+    alpha: 0.5
+
+# ----------------------------------------------------------
+# Hardware
+# ----------------------------------------------------------
+hardware:
+  device: "cuda"           # "cuda" | "cpu" | "mps"
+  num_gpus: 1
+  distributed: false
+  compile_model: false     # torch.compile (PyTorch 2.0+)

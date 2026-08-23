@@ -1,0 +1,75 @@
+{
+  "target": "phenotype",
+  "best_epoch": 19,
+  "training_time_seconds": 744.72,
+  "total_train_samples": 1493,
+  "val_samples": 166,
+  "model_params": 7891846,
+  "best_val_f1": 0.8472,
+  "final_val_metrics": {
+    "accuracy": 0.8494,
+    "balanced_accuracy": 0.8762,
+    "macro_f1": 0.8472,
+    "weighted_f1": 0.8566,
+    "roc_auc": 0.962
+  },
+  "confusion_matrix": [
+    [
+      42,
+      0,
+      0
+    ],
+    [
+      0,
+      71,
+      20
+    ],
+    [
+      0,
+      5,
+      28
+    ]
+  ],
+  "top_features": [
+    {
+      "feature": "Treatment-code_-1.0",
+      "importance": 0.4662855267524719
+    },
+    {
+      "feature": "Treatment-code_0.0",
+      "importance": 0.2041652649641037
+    },
+    {
+      "feature": "Treatment-code_1.0",
+      "importance": 0.18171194195747375
+    },
+    {
+      "feature": "Treatment-code_2.0",
+      "importance": 0.17946746945381165
+    },
+    {
+      "feature": "INSTITUTION-CODE_2",
+      "importance": 0.14060084521770477
+    },
+    {
+      "feature": "INSTITUTION-CODE_1",
+      "importance": 0.13595418632030487
+    },
+    {
+      "feature": "INSTITUTION-CODE_4",
+      "importance": 0.1129205971956253
+    },
+    {
+      "feature": "INSTITUTION-CODE_3",
+      "importance": 0.1038907840847969
+    },
+    {
+      "feature": "Age",
+      "importance": 0.0902000442147255
+    },
+    {
+      "feature": "SEX-CODE_0",
+      "importance": 0.08659128099679947
+    }
+  ]
+}

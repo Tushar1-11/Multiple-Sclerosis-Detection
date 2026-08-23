@@ -1,0 +1,85 @@
+{
+  "num_samples": 1659,
+  "num_features": 47,
+  "benchmark_time_seconds": 144.96,
+  "classification": {
+    "Logistic Regression": {
+      "accuracy_mean": 0.9493684708623011,
+      "accuracy_std": 0.00349307422115073,
+      "bacc_mean": 0.9425981978220784,
+      "bacc_std": 0.004783919341337738,
+      "macro_f1_mean": 0.9427334794865857,
+      "macro_f1_std": 0.003743103212188563,
+      "weighted_f1_mean": 0.949277653614141,
+      "roc_auc_mean": 0.9888117568833128
+    },
+    "SVM (RBF Kernel)": {
+      "accuracy_mean": 0.9475521421031559,
+      "accuracy_std": 0.009492494390383981,
+      "bacc_mean": 0.940900724482814,
+      "bacc_std": 0.010188741579440623,
+      "macro_f1_mean": 0.9407450875086936,
+      "macro_f1_std": 0.010443525252148731,
+      "weighted_f1_mean": 0.9475307607316188,
+      "roc_auc_mean": 0.9862372490488227
+    },
+    "Random Forest": {
+      "accuracy_mean": 0.9318949514068358,
+      "accuracy_std": 0.013783342087735441,
+      "bacc_mean": 0.9161970699284133,
+      "bacc_std": 0.02029509036524908,
+      "macro_f1_mean": 0.920948148581099,
+      "macro_f1_std": 0.016754371529331576,
+      "weighted_f1_mean": 0.9310447223198814,
+      "roc_auc_mean": 0.9870622461397185
+    },
+    "Neural Network (MLP)": {
+      "accuracy_mean": 0.9415298656863103,
+      "accuracy_std": 0.006498689012725582,
+      "bacc_mean": 0.9329927949330934,
+      "bacc_std": 0.0073078090704029475,
+      "macro_f1_mean": 0.9337615216707139,
+      "macro_f1_std": 0.007062517436955613,
+      "weighted_f1_mean": 0.941411936193713,
+      "roc_auc_mean": 0.9862514633182204
+    }
+  },
+  "regression": {
+    "Ridge Regression": {
+      "mae_mean": 0.1533406615257263,
+      "mae_std": 0.013538017286409309,
+      "rmse_mean": 0.23910536280455147,
+      "rmse_std": 0.033399673911293136,
+      "r2_mean": 0.9857655525207519,
+      "r2_std": 0.004507749145714383,
+      "pearson_r_mean": 0.9928866950583041
+    },
+    "Support Vector Regr": {
+      "mae_mean": 0.30954624041970885,
+      "mae_std": 0.042353128810038096,
+      "rmse_mean": 0.4918911953226841,
+      "rmse_std": 0.0662420903898775,
+      "r2_mean": 0.9407330708481222,
+      "r2_std": 0.014802576803126707,
+      "pearson_r_mean": 0.9737241161451374
+    },
+    "Random Forest Regressor": {
+      "mae_mean": 0.08010652821931041,
+      "mae_std": 0.009413891712384093,
+      "rmse_mean": 0.17724307622641947,
+      "rmse_std": 0.04495211931012956,
+      "r2_mean": 0.991737708457873,
+      "r2_std": 0.00487097896981859,
+      "pearson_r_mean": 0.995922174697274
+    },
+    "Neural Network Regr (MLP)": {
+      "mae_mean": 0.1188504308462143,
+      "mae_std": 0.01654854643455375,
+      "rmse_mean": 0.1701105518272193,
+      "rmse_std": 0.031217587506714977,
+      "r2_mean": 0.9926336884498597,
+      "r2_std": 0.0030956151941256846,
+      "pearson_r_mean": 0.9963706682555408
+    }
+  }
+}

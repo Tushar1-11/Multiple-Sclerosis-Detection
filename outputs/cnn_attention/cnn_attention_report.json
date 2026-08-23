@@ -1,0 +1,76 @@
+{
+  "model": "CNN + Attention Hybrid",
+  "target": "phenotype",
+  "best_epoch": 86,
+  "training_sec": 5656.13,
+  "train_samples": 1493,
+  "val_samples": 166,
+  "total_params": 8189830,
+  "best_val_f1": 0.8878,
+  "val_metrics": {
+    "accuracy": 0.8916,
+    "balanced_accuracy": 0.9148,
+    "macro_f1": 0.8878,
+    "weighted_f1": 0.8961,
+    "roc_auc": 0.9766
+  },
+  "confusion_matrix": [
+    [
+      42,
+      0,
+      0
+    ],
+    [
+      0,
+      76,
+      15
+    ],
+    [
+      0,
+      3,
+      30
+    ]
+  ],
+  "top_features": [
+    {
+      "feature": "feat_T2LV_x_EDSS",
+      "importance": 0.23429305851459503
+    },
+    {
+      "feature": "INSTITUTION-CODE_1",
+      "importance": 0.09401314705610275
+    },
+    {
+      "feature": "INSTITUTION-CODE_2",
+      "importance": 0.09296002238988876
+    },
+    {
+      "feature": "feat_T2LV_per_year_log",
+      "importance": 0.07896226644515991
+    },
+    {
+      "feature": "Treatment-code_1.0",
+      "importance": 0.07516856491565704
+    },
+    {
+      "feature": "Treatment-code_-1.0",
+      "importance": 0.06314671784639359
+    },
+    {
+      "feature": "feat_T2LV_log1p",
+      "importance": 0.061486825346946716
+    },
+    {
+      "feature": "feat_DiseaseDur_log1p",
+      "importance": 0.060097143054008484
+    },
+    {
+      "feature": "Age",
+      "importance": 0.0532490499317646
+    },
+    {
+      "feature": "SEX-CODE_1",
+      "importance": 0.0524335615336895
+    }
+  ]
+}

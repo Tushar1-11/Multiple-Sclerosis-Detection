@@ -1,0 +1,49 @@
+{
+  "classification": {
+    "Logistic Regression": {
+      "best_params": {
+        "C": 0.009734108964301144,
+        "solver": "sag"
+      },
+      "val_f1": 0.9311799311799311,
+      "val_acc": 0.9397590361445783,
+      "train_f1": 0.9281228248848349,
+      "overfit_gap": 0.0
+    },
+    "SVM": {
+      "best_params": {
+        "C": 10.831819536462648,
+        "gamma": 0.1,
+        "kernel": "linear"
+      },
+      "val_f1": 0.9531481931287615,
+      "val_acc": 0.9578313253012049,
+      "train_f1": 0.9577590111952373,
+      "overfit_gap": 0.004610818066475786
+    },
+    "Random Forest": {
+      "best_params": {
+        "n_estimators": 150,
+        "max_depth": 7,
+        "min_samples_split": 10,
+        "min_samples_leaf": 5
+      },
+      "val_f1": 0.9299165061014772,
+      "val_acc": 0.9337349397590361,
+      "train_f1": 0.9597680805854268,
+      "overfit_gap": 0.029851574483949594
+    }
+  },
+  "regression": {
+    "Random Forest Regressor": {
+      "best_params": {
+        "n_estimators": 150,
+        "max_depth": 13,
+        "min_samples_split": 4
+      },
+      "val_mae": 0.06439336141755497,
+      "train_mae": 0.027905965536337063,
+      "overfit_gap": 0.03648739588121791
+    }
+  }
+}

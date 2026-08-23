@@ -1,0 +1,81 @@
+# ============================================================
+# MSNet: Multiple Sclerosis Detection Framework
+# Requirements file — all pinned for reproducibility
+# ============================================================
+
+# ----------------------------------------------------------
+# Core Deep Learning
+# ----------------------------------------------------------
+torch>=2.0.1
+torchvision>=0.15.2
+torchaudio>=2.0.2
+
+# ----------------------------------------------------------
+# MONAI — Medical Open Network for AI
+# Required for: 3D transforms, sliding-window inference,
+# NIfTI loading, and medical augmentation pipelines
+# ----------------------------------------------------------
+monai>=1.3.0
+monai-weekly  # optional; remove for stable builds
+
+# ----------------------------------------------------------
+# Medical Imaging I/O
+# ----------------------------------------------------------
+nibabel>=5.1.0          # NIfTI file reading/writing
+nilearn>=0.10.2         # Brain atlas, plotting, masking
+SimpleITK>=2.3.0        # ITK-based image registration/resample
+antspyx>=0.3.8          # ANTs for brain registration
+
+# ----------------------------------------------------------
+# Scientific Computing
+# ----------------------------------------------------------
+numpy>=1.24.0
+scipy>=1.11.0
+scikit-learn>=1.3.0
+pandas>=2.0.3
+
+# ----------------------------------------------------------
+# Visualization & Explainability
+# ----------------------------------------------------------
+matplotlib>=3.7.2
+seaborn>=0.12.2
+plotly>=5.17.0
+grad-cam>=1.4.8         # pytorch-grad-cam
+
+# ----------------------------------------------------------
+# Experiment Tracking
+# ----------------------------------------------------------
+wandb>=0.16.0           # Weights & Biases
+tensorboard>=2.14.0
+
+# ----------------------------------------------------------
+# Model Architecture
+# ----------------------------------------------------------
+timm>=0.9.7             # Vision models (Swin Transformer base)
+einops>=0.7.0           # Tensor rearranging (used in attention)
+
+# ----------------------------------------------------------
+# Training Utilities
+# ----------------------------------------------------------
+tqdm>=4.66.1
+pyyaml>=6.0.1
+omegaconf>=2.3.0        # Hierarchical config management
+hydra-core>=1.3.2       # Config + CLI override system
+
+# ----------------------------------------------------------
+# Statistics & Metrics
+# ----------------------------------------------------------
+torchmetrics>=1.2.0     # GPU-accelerated metric computation
+lifelines>=0.27.8       # Survival analysis (optional)
+
+# ----------------------------------------------------------
+# Data Quality & Validation
+# ----------------------------------------------------------
+pydantic>=2.4.0         # Runtime config/data validation
+rich>=13.6.0            # Rich terminal output
+
+# ----------------------------------------------------------
+# Testing
+# ----------------------------------------------------------
+pytest>=7.4.0
+pytest-cov>=4.1.0

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# PyTorch Checkpoints & Large Files
+*.pt
+*.pth
+*.bin
+*.onnx
+
+# Outputs & Temporary files
+scratch/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# System files
+.DS_Store
+Thumbs.db

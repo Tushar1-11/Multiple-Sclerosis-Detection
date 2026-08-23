@@ -1,0 +1,71 @@
+{
+  "target": "phenotype",
+  "best_epoch": 28,
+  "training_time_seconds": 105.51,
+  "test_metrics": {
+    "accuracy": 0.9679,
+    "balanced_accuracy": 0.9805,
+    "macro_f1": 0.9653,
+    "weighted_f1": 0.9686,
+    "roc_auc": 0.9962
+  },
+  "confusion_matrix": [
+    [
+      62,
+      0,
+      0
+    ],
+    [
+      0,
+      129,
+      8
+    ],
+    [
+      0,
+      0,
+      50
+    ]
+  ],
+  "top_features": [
+    {
+      "feature": "EDSS",
+      "importance": 0.21533699333667755
+    },
+    {
+      "feature": "INSTITUTION-CODE_2",
+      "importance": 0.1668296903371811
+    },
+    {
+      "feature": "EDSS_missing",
+      "importance": 0.13622385263442993
+    },
+    {
+      "feature": "Age",
+      "importance": 0.08217164129018784
+    },
+    {
+      "feature": "Treatment-code_2.0",
+      "importance": 0.07774057239294052
+    },
+    {
+      "feature": "INSTITUTION-CODE_1",
+      "importance": 0.07453784346580505
+    },
+    {
+      "feature": "INSTITUTION-CODE_3",
+      "importance": 0.07075564563274384
+    },
+    {
+      "feature": "nGM_Cerebellum [ml]",
+      "importance": 0.06961479038000107
+    },
+    {
+      "feature": "nBrainstem [ml]",
+      "importance": 0.06589203327894211
+    },
+    {
+      "feature": "nHippocampus [ml]",
+      "importance": 0.06557070463895798
+    }
+  ]
+}

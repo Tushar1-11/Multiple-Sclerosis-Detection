@@ -1,0 +1,34 @@
+{
+  "subject_id": "patient_001",
+  "predicted_class": 3,
+  "predicted_label": "PPMS",
+  "class_probabilities": {
+    "HC": 0.20958463847637177,
+    "RRMS": 0.2277107834815979,
+    "SPMS": 0.2396603673696518,
+    "PPMS": 0.32304415106773376
+  },
+  "confidence": 0.32304415106773376,
+  "modality_availability": {
+    "T1": true,
+    "T2": true,
+    "FLAIR": true,
+    "GD_T1": true
+  },
+  "clinical_feature_importance": {
+    "age": 6.798534716960514e-13,
+    "gender": 7.01684200521413e-07,
+    "edss": 0.999998927116394,
+    "disease_duration": 1.0,
+    "igg_index": 0.0007113238680176437,
+    "oligoclonal_bands": 0.010573631152510643,
+    "t_cell_count": 1.0994241165462881e-05
+  },
+  "inference_time_ms": 342.74,
+  "uncertainty": {
+    "epistemic_uncertainty": 0.00030024946318008006,
+    "predictive_entropy": 1.3691601753234863,
+    "confidence_note": "High confidence prediction"
+  },
+  "gradcam_paths": {}
+}

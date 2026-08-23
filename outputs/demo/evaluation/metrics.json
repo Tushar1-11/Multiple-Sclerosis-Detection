@@ -1,0 +1,174 @@
+{
+  "metrics": {
+    "accuracy": 0.2857142857142857,
+    "sensitivity_class0": 0.0,
+    "precision_class0": 0.0,
+    "f1_class0": 0.0,
+    "sensitivity_class1": 0.0,
+    "precision_class1": 0.0,
+    "f1_class1": 0.0,
+    "sensitivity_class2": 0.0,
+    "precision_class2": 0.0,
+    "f1_class2": 0.0,
+    "sensitivity_class3": 1.0,
+    "precision_class3": 0.2857142857142857,
+    "f1_class3": 0.4444444444444444,
+    "sensitivity": 0.25,
+    "precision": 0.07142857142857142,
+    "f1_macro": 0.1111111111111111,
+    "f1_weighted": 0.12698412698412698,
+    "f1_score": 0.1111111111111111,
+    "specificity": 0.7499999985833334,
+    "cohen_kappa": 0.0,
+    "mcc": 0.0,
+    "roc_auc": 0.3833333333333333,
+    "pr_auc": 0.37529761904761905
+  },
+  "confidence_intervals": {
+    "accuracy": {
+      "mean": 0.22727272727272727,
+      "ci_low": 0.0,
+      "ci_high": 0.4964285714285711,
+      "std": 0.1406260248552449
+    },
+    "sensitivity_class0": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "precision_class0": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "f1_class0": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "sensitivity_class1": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "precision_class1": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "f1_class1": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "sensitivity_class2": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "precision_class2": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "f1_class2": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "sensitivity_class3": {
+      "mean": 0.8636363636363636,
+      "ci_low": 0.0,
+      "ci_high": 1.0,
+      "std": 0.34317429251230674
+    },
+    "precision_class3": {
+      "mean": 0.22727272727272727,
+      "ci_low": 0.0,
+      "ci_high": 0.4964285714285711,
+      "std": 0.1406260248552449
+    },
+    "f1_class3": {
+      "mean": 0.34896694214876034,
+      "ci_low": 0.0,
+      "ci_high": 0.6604545454545452,
+      "std": 0.18890702498295667
+    },
+    "sensitivity": {
+      "mean": 0.2159090909090909,
+      "ci_low": 0.0,
+      "ci_high": 0.25,
+      "std": 0.08579357312807669
+    },
+    "precision": {
+      "mean": 0.056818181818181816,
+      "ci_low": 0.0,
+      "ci_high": 0.12410714285714278,
+      "std": 0.03515650621381122
+    },
+    "f1_macro": {
+      "mean": 0.08724173553719008,
+      "ci_low": 0.0,
+      "ci_high": 0.1651136363636363,
+      "std": 0.04722675624573917
+    },
+    "f1_weighted": {
+      "mean": 0.10557851239669419,
+      "ci_low": 0.0,
+      "ci_high": 0.33240259740259703,
+      "std": 0.09857588269032949
+    },
+    "f1_score": {
+      "mean": 0.08724173553719008,
+      "ci_low": 0.0,
+      "ci_high": 0.1651136363636363,
+      "std": 0.04722675624573917
+    },
+    "specificity": {
+      "mean": 0.7499999985265152,
+      "ci_low": 0.7499999983552084,
+      "ci_high": 0.74999999870625,
+      "std": 1.0325008332552679e-10
+    },
+    "cohen_kappa": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "mcc": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "std": 0.0
+    },
+    "roc_auc": {
+      "mean": 0.3721590909090909,
+      "ci_low": 0.0,
+      "ci_high": 0.536875,
+      "std": 0.1628414553763032
+    },
+    "pr_auc": {
+      "mean": 0.44618506493506493,
+      "ci_low": 0.3164657738095238,
+      "ci_high": 0.6259374999999999,
+      "std": 0.08898291069453049
+    }
+  },
+  "n_subjects": 7,
+  "class_names": [
+    "HC",
+    "RRMS",
+    "SPMS",
+    "PPMS"
+  ]
+}
