@@ -218,6 +218,53 @@ python generate_final_test_predictions.py
 ```
 
 ---
+## 🔍 Explainable AI (XAI)
+
+MSNet incorporates explainability techniques to make model predictions more interpretable and easier to analyze. Since medical AI predictions can influence clinical assessments, understanding which input features contribute to a prediction is an important part of the system.
+
+### Explainability Techniques
+
+- **SHAP (SHapley Additive exPlanations):** Identifies how individual clinical and MRI-derived biomarkers contribute to model predictions. SHAP can be used to analyze global feature importance and individual predictions when supported by the selected model.
+- **Grad-CAM:** Provides visual explanations for compatible CNN-based models by highlighting input regions or feature-map activations that contribute to a prediction. Its application depends on the model architecture and input representation.
+- **Biomarker Analysis:** Examines relevant measurements such as brain volumetric features, lesion burden, grey-matter/white-matter ratios, and other engineered biomarkers.
+- **Multi-Agent Clinical Reasoning:** The `BiomarkerAgent`, `LesionVelocityAgent`, and `ClinicalVerificationAgent` support structured analysis of biomarker patterns, disease-related trends, and prediction consistency.
+
+### Objectives
+
+1. Improve transparency in MS phenotype classification and EDSS estimation.
+2. Identify influential biomarkers behind model predictions.
+3. Support error analysis and investigation of potentially misleading predictions.
+4. Provide interpretable information for research and clinician review.
+
+Explainability outputs are intended to support analysis rather than replace clinical judgment. Feature importance and visual explanations do not independently establish causation or confirm a diagnosis.
+
+## 🔐 Federated Learning (FL)
+
+Federated Learning is a privacy-oriented approach that enables multiple healthcare institutions to collaboratively train machine learning models without directly pooling their raw patient data into a central dataset.
+
+### Proposed Architecture
+
+MSNet can be extended to support collaborative model training across multiple participating institutions.
+
+1. **Local Data:** Each participating institution maintains its own clinical and MRI-derived biomarker dataset.
+2. **Local Model Training:** Each institution trains a compatible model using its locally available data.
+3. **Model Update Sharing:** Participating clients send model parameters or updates to a coordinating server instead of transferring raw patient records.
+4. **Global Aggregation:** The server combines compatible client updates using an aggregation algorithm such as Federated Averaging (FedAvg).
+5. **Global Model Distribution:** The updated global model is distributed to participating clients for subsequent training rounds.
+6. **Local Evaluation:** Each client evaluates the model on its local validation or test data, allowing performance differences across institutions to be examined.
+
+### Benefits
+
+- **Data locality:** Raw patient records remain within their originating institutions during the federated training process.
+- **Collaborative learning:** Models can learn from data distributions across participating institutions.
+- **Institutional diversity:** Evaluation across clients can help identify differences caused by patient populations, data quality, or acquisition protocols.
+- **Compatibility with explainability:** Explainability methods can be applied locally to investigate model behavior and compare feature contributions across participating clients.
+
+### Important Considerations
+
+Federated Learning does not automatically guarantee privacy. Model updates may still leak information, so additional safeguards such as secure aggregation, access controls, and differential privacy may be required.
+
+The federated workflow is an architectural extension unless a working client-server training and aggregation pipeline has been implemented and evaluated. Performance improvements and privacy guarantees must be established experimentally rather than assumed.
 
 ## 📁 Repository Directory & Output Files Map
 
