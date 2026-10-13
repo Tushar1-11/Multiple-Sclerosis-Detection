@@ -37,7 +37,6 @@ import torch.nn.functional as F
 import matplotlib
 matplotlib.use("Agg")  # Non-interactive backend for server environments
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 
 logger = logging.getLogger(__name__)
@@ -61,24 +60,27 @@ class GradCAMHook:
     def __init__(self, layer: nn.Module):
         self.activations: Optional[torch.Tensor] = None
         self.gradients: Optional[torch.Tensor] = None
+        self._gradient_handle = None
 
-        # Forward hook: capture activations
         self._fwd_hook = layer.register_forward_hook(self._save_activation)
-        # Backward hook: capture gradients
-        self._bwd_hook = layer.register_full_backward_hook(self._save_gradient)
 
     def _save_activation(self, module, input, output):
         """Store forward activations."""
+        if not isinstance(output, torch.Tensor):
+            raise TypeError("Grad-CAM target layer must return a tensor")
         self.activations = output.detach()
+        if output.requires_grad:
+            self._gradient_handle = output.register_hook(self._save_gradient)
 
-    def _save_gradient(self, module, grad_input, grad_output):
-        """Store backward gradients w.r.t. the layer output."""
-        self.gradients = grad_output[0].detach()
+    def _save_gradient(self, gradient: torch.Tensor) -> None:
+        """Store gradients with respect to the hooked layer's output."""
+        self.gradients = gradient.detach()
 
     def remove(self):
         """Remove hooks to free memory."""
         self._fwd_hook.remove()
-        self._bwd_hook.remove()
+        if self._gradient_handle is not None:
+            self._gradient_handle.remove()
 
 
 # ============================================================
@@ -118,14 +120,21 @@ class GradCAM3D:
         Automatically selects the last conv block of the CNN encoder
         or the last Swin encoder block.
         """
-        encoder = self.model.mri_encoders[modality_idx]
+        if self.target_layer_name is not None:
+            layer_name = self.target_layer_name.format(
+                modality_idx=modality_idx
+            )
+            return self.model.get_submodule(layer_name)
+
+        encoders = self.model.mri_encoders
+        if not 0 <= modality_idx < len(encoders):
+            raise ValueError(f"Invalid modality index: {modality_idx}")
+        encoder = encoders[modality_idx]
         encoder_type = self.model.encoder_type
 
         if encoder_type == "resnet3d":
-            # Last conv layer in stage 4
             target = encoder.stage4[-1].conv3
         elif encoder_type == "swin_transformer":
-            # Last stage of Swin ViT encoder
             target = encoder.swin.swinViT.layers[-1].blocks[-1].norm2
         else:
             raise ValueError(f"Unknown encoder type: {encoder_type}")
@@ -155,97 +164,98 @@ class GradCAM3D:
               cam_3d: [D, H, W] normalized saliency map [0, 1]
               target_class: The class that was explained
         """
-        assert volumes.shape[0] == 1, "Grad-CAM requires batch size = 1"
+        if volumes.ndim != 6 or volumes.shape[0] != 1:
+            raise ValueError(
+                "Grad-CAM expects one input shaped [1, modalities, 1, D, H, W]"
+            )
+        if clinical.ndim != 2 or clinical.shape[0] != 1:
+            raise ValueError("Grad-CAM expects clinical input shaped [1, features]")
+        if modality_mask.ndim != 2 or modality_mask.shape != volumes.shape[:2]:
+            raise ValueError("Modality mask must match [batch, modalities]")
+        if not 0 <= modality_idx < volumes.shape[1]:
+            raise ValueError(f"Invalid modality index: {modality_idx}")
 
+        target_layer = self._get_target_layer(modality_idx)
+        was_training = self.model.training
         self.model.eval()
         volumes = volumes.to(self.device)
         clinical = clinical.to(self.device)
         modality_mask = modality_mask.to(self.device)
 
-        # ---- Register Hook ----
-        target_layer = self._get_target_layer(modality_idx)
         hook = GradCAMHook(target_layer)
 
         try:
-            # ---- Forward Pass with Grad ----
-            volumes.requires_grad_(False)
-            output = self.model(
-                volumes=volumes,
-                clinical=clinical,
-                modality_mask=modality_mask,
-                return_features=False,
-            )
-            logits = output["logits"]  # [1, n_classes]
-
-            # ---- Select Target Class ----
-            if target_class is None:
-                target_class = logits.argmax(dim=-1).item()
-
-            # ---- Backprop to Target Class Score ----
-            self.model.zero_grad()
-            class_score = logits[0, target_class]
-            class_score.backward()
-
-            # ---- Extract Activations & Gradients ----
-            activations = hook.activations  # [1, C, D', H', W']
-            gradients   = hook.gradients    # [1, C, D', H', W']
-
-            if activations is None or gradients is None:
-                logger.error("[GradCAM] Failed to capture activations/gradients")
-                hook.remove()
-                return np.zeros((128, 128, 128)), target_class
-
-            # ---- For Transformer (sequence format): reshape ----
-            if activations.dim() == 3:
-                # [1, T, C] format from Swin → reshape to [1, C, D', H', W']
-                T = activations.shape[1]
-                C = activations.shape[2]
-                sp = round(T ** (1/3))
-                if sp ** 3 == T:
-                    activations = activations.reshape(1, sp, sp, sp, C).permute(0, 4, 1, 2, 3)
-                    gradients = gradients.reshape(1, sp, sp, sp, C).permute(0, 4, 1, 2, 3)
+            with torch.enable_grad():
+                output = self.model(
+                    volumes=volumes,
+                    clinical=clinical,
+                    modality_mask=modality_mask,
+                    return_features=False,
+                )
+                logits = output["logits"]
+                if logits.ndim != 2 or logits.shape[0] != 1:
+                    raise ValueError("Model logits must have shape [1, classes]")
+                if target_class is None:
+                    target_index = int(logits.argmax(dim=-1).item())
                 else:
-                    # Fall back: just use GAP over token dim
-                    activations = activations.mean(dim=1, keepdim=True)  # [1, 1, C]
-                    gradients   = gradients.mean(dim=1, keepdim=True)
+                    target_index = int(target_class)
+                if not 0 <= target_index < logits.shape[1]:
+                    raise ValueError(f"Invalid target class: {target_index}")
 
-            # ---- GAP Gradients → Per-Channel Weights ----
-            # alpha_k = (1/Z) * sum_{i,j,l} (dY^c / dA^k_{ijl})
-            weights = gradients.mean(dim=(0, 2, 3, 4))  # [C]
+                self.model.zero_grad(set_to_none=True)
+                logits[0, target_index].backward()
 
-            # ---- Weighted Sum of Activations ----
-            cam = torch.zeros(
-                activations.shape[-3:],
-                dtype=torch.float32,
-                device=self.device,
+            activations = hook.activations
+            gradients = hook.gradients
+            if activations is None or gradients is None:
+                raise RuntimeError(
+                    "Grad-CAM could not capture layer activations and gradients"
+                )
+
+            if activations.ndim == 3:
+                token_count = activations.shape[1]
+                side = round(token_count ** (1 / 3))
+                if side ** 3 != token_count:
+                    raise ValueError(
+                        "Swin target layer tokens are not a cubic 3D grid; "
+                        "choose a spatial target layer for Grad-CAM"
+                    )
+                activations = activations.reshape(
+                    1, side, side, side, activations.shape[-1]
+                ).permute(0, 4, 1, 2, 3)
+                gradients = gradients.reshape(
+                    1, side, side, side, gradients.shape[-1]
+                ).permute(0, 4, 1, 2, 3)
+            elif activations.ndim == 5 and self.model.encoder_type == "swin_transformer":
+                activations = activations.permute(0, 4, 1, 2, 3)
+                gradients = gradients.permute(0, 4, 1, 2, 3)
+            elif activations.ndim != 5:
+                raise ValueError(
+                    f"Expected 3D feature map or token tensor, got "
+                    f"activation shape {tuple(activations.shape)}"
+                )
+
+            weights = gradients.mean(dim=(0, 2, 3, 4))
+            cam = F.relu(
+                (weights[None, :, None, None, None] * activations).sum(dim=1)
             )
-            for k, w in enumerate(weights):
-                cam += w * activations[0, k, :, :, :]  # [D', H', W']
-
-            # ---- Apply ReLU (keep only positive activations) ----
-            cam = F.relu(cam)
-
-            # ---- Normalize to [0, 1] ----
+            cam = F.interpolate(
+                cam.unsqueeze(1),
+                size=volumes.shape[-3:],
+                mode="trilinear",
+                align_corners=False,
+            ).squeeze(0).squeeze(0)
             cam_min = cam.min()
             cam_max = cam.max()
             if cam_max > cam_min:
                 cam = (cam - cam_min) / (cam_max - cam_min)
-
-            # ---- Upsample to Input Volume Size ----
-            input_size = list(volumes.shape[-3:])  # [D, H, W]
-            cam = cam.unsqueeze(0).unsqueeze(0)  # [1, 1, D', H', W']
-            cam = F.interpolate(
-                cam,
-                size=input_size,
-                mode="trilinear",
-                align_corners=False,
-            )  # [1, 1, D, H, W]
-            cam = cam.squeeze().cpu().numpy()  # [D, H, W]
+            cam = cam.detach().cpu().numpy().astype(np.float32, copy=False)
 
         finally:
             hook.remove()
+            self.model.train(was_training)
 
-        return cam, target_class
+        return cam, target_index
 
     def compute_all_modalities(
         self,
@@ -268,22 +278,24 @@ class GradCAM3D:
         """
         cams = {}
         for i, modality in enumerate(MODALITIES):
+            if i >= modality_mask.shape[1]:
+                break
             if modality_mask[0, i].item() < 0.5:
-                # Modality not present — skip
                 logger.debug(f"[GradCAM] Skipping absent modality: {modality}")
                 continue
-            try:
-                cam, cls = self.compute_gradcam(
-                    volumes, clinical, modality_mask,
-                    target_class=target_class,
-                    modality_idx=i,
-                )
-                cams[modality] = cam
-                logger.info(f"[GradCAM] {modality} → class {cls}, "
-                            f"max_activation={cam.max():.4f}")
-            except Exception as e:
-                logger.error(f"[GradCAM] Failed for {modality}: {e}")
+            cam, cls = self.compute_gradcam(
+                volumes, clinical, modality_mask,
+                target_class=target_class,
+                modality_idx=i,
+            )
+            cams[modality] = cam
+            logger.info(
+                f"[GradCAM] {modality} → class {cls}, "
+                f"max_activation={cam.max():.4f}"
+            )
 
+        if not cams:
+            raise ValueError("Grad-CAM requires at least one present MRI modality")
         return cams
 
 
@@ -355,9 +367,6 @@ class GradCAMVisualizer:
             f"Predicted: {class_names[target_class]}",
             color="white", fontsize=14, fontweight="bold",
         )
-
-        cmap_main = plt.colormaps.get_cmap("gray")
-        cmap_heat = plt.colormaps.get_cmap(self.colormap)
 
         for j, sl_idx in enumerate(slice_indices):
             img_slice = volume[sl_idx, :, :]   # [H, W]
@@ -470,3 +479,56 @@ class GradCAMVisualizer:
         plt.savefig(fname, dpi=150, bbox_inches="tight", facecolor="#0d0d0d")
         plt.close()
         logger.info(f"[GradCAM] Saved multi-modal panel → {fname}")
+
+    def save_modality_saliency_chart(
+        self,
+        cams: Dict[str, np.ndarray],
+        subject_id: str,
+    ) -> Path:
+        """Save an SVG bar chart of mean normalized saliency per modality."""
+        if not cams:
+            raise ValueError("Cannot plot modality saliency without Grad-CAM maps")
+
+        modalities = list(cams)
+        mean_saliency = []
+        for modality in modalities:
+            cam = np.asarray(cams[modality])
+            if cam.ndim != 3 or cam.size == 0 or not np.isfinite(cam).all():
+                raise ValueError(
+                    f"Grad-CAM map for {modality} must be a finite 3D volume"
+                )
+            if cam.min() < 0 or cam.max() > 1:
+                raise ValueError(
+                    f"Grad-CAM map for {modality} must be normalized to [0, 1]"
+                )
+            mean_saliency.append(float(cam.mean()))
+
+        fig, ax = plt.subplots(figsize=(8, 5), facecolor="white")
+        bars = ax.bar(modalities, mean_saliency, color="#2878B5")
+        ax.set_title(f"Mean Grad-CAM Saliency by Modality\nSubject: {subject_id}")
+        ax.set_xlabel("MRI modality")
+        ax.set_ylabel("Mean normalized saliency")
+        ax.set_ylim(0, 1)
+        ax.grid(axis="y", linestyle="--", alpha=0.35)
+        ax.bar_label(bars, fmt="%.3f", padding=3)
+        fig.text(
+            0.5,
+            0.01,
+            "Maps are normalized independently; values describe saliency spread, "
+            "not relative modality importance.",
+            ha="center",
+            fontsize=8,
+            color="#444444",
+        )
+        fig.tight_layout(rect=(0, 0.06, 1, 1))
+
+        path = self.output_dir / f"{subject_id}_modality_saliency.svg"
+        fig.savefig(path, format="svg", bbox_inches="tight")
+        fig.savefig(path.with_suffix(".png"), format="png", dpi=180, bbox_inches="tight")
+        plt.close(fig)
+        logger.info(f"[GradCAM] Saved modality saliency chart → {path}")
+        logger.info(
+            f"[GradCAM] Saved modality saliency chart preview → "
+            f"{path.with_suffix('.png')}"
+        )
+        return path
