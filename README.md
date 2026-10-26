@@ -240,31 +240,107 @@ Explainability outputs are intended to support analysis rather than replace clin
 
 ## 🔐 Federated Learning (FL)
 
-Federated Learning is a privacy-oriented approach that enables multiple healthcare institutions to collaboratively train machine learning models without directly pooling their raw patient data into a central dataset.
+`train_federated_msnet.py` simulates four clients using the tabular `CNNAttentionHybrid` MSNet. By default, training patients are randomly assigned to equal-size clients with phenotype-stratified class counts; validation and test cohorts remain separate. Use `--client-partition site` to model one client per `INSTITUTION-CODE` instead. By default, the script trains both FedAvg and FedProx and selects by validation phenotype macro-F1. Its classification recipe uses shuffled client batches, class-weighted focal loss with label smoothing, mixup after warmup, gradient accumulation, a frozen-CNN warmup, differential learning rates, and cosine warm restarts. The group-head loss defaults to zero to match the centralized phenotype-training objective; set `--group-loss-weight` above zero if the group head should be supervised.
 
-### Proposed Architecture
+```text
+Patient-level train / validation / test split
+             │
+             ├── Train only: feature engineering + preprocessing fit
+             │                Baseline-matched phenotype features
+             │
+             ├── Equal client 1 ──────┐
+             ├── Equal client 2 ──────┤
+             ├── Equal client 3 ──────┼─ FedAvg run ───────┐
+             └── Equal client 4 ──────┘                     │
+                         Same MSNet + phenotype/EDSS losses  ├─ Server compares
+                         ├ Phenotype classification          │  validation macro-F1
+                         ├ HC-vs-MS head (optional)          │  and selects model
+                         └ EDSS regression (masked if absent)│
+                                                             │
+                         Same four clients ─ FedProx run ─────┘
+                                                               │
+                                      Selected global checkpoint
+                                                               │
+                         Held-out test evaluation (one selected model)
+                           ├ Phenotype: HC / RRMS / Progressive MS
+                           ├ Group: HC / MS (only if supervised)
+                           └ EDSS: MAE / RMSE / R² / Pearson r
+                                                               │
+                                Feature attribution for supervised heads
+                                (gradient × input, test-cohort summary)
+```
 
-MSNet can be extended to support collaborative model training across multiple participating institutions.
+Run the comparison with:
 
-1. **Local Data:** Each participating institution maintains its own clinical and MRI-derived biomarker dataset.
-2. **Local Model Training:** Each institution trains a compatible model using its locally available data.
-3. **Model Update Sharing:** Participating clients send model parameters or updates to a coordinating server instead of transferring raw patient records.
-4. **Global Aggregation:** The server combines compatible client updates using an aggregation algorithm such as Federated Averaging (FedAvg).
-5. **Global Model Distribution:** The updated global model is distributed to participating clients for subsequent training rounds.
-6. **Local Evaluation:** Each client evaluates the model on its local validation or test data, allowing performance differences across institutions to be examined.
+```bash
+python train_federated_msnet.py --client-partition equal --output-dir outputs/federated_msnet_equal
+```
+
+Use `--client-partition site` for institution-level, non-IID clients. Equal clients offer a balanced IID-style experiment, not a substitute for evaluating institution-level generalization; reports retain held-out test metrics by institution for that check.
+
+The selected checkpoint, comparison report, comparison graph, feature-attribution CSV, and per-head attribution chart are written to `outputs/federated_msnet/`. Per-protocol reports and training graphs are saved under `fedavg/` and `fedprox/`. Defaults are 200 rounds, 15 frozen-CNN warmup rounds, and patience 30, matching the centralized trainer's epoch/patience budget. Use `--protocol fedavg` or `--protocol fedprox` for a single-protocol run, or `--rounds`, `--warmup-rounds`, `--local-epochs`, `--warmup-learning-rate`, and `--fedprox-mu` to configure training.
+
+Phenotype and group heads use the same input feature policy as the existing CNN-Attention baseline (`EDSS` and raw disease duration excluded; engineered columns retained). Because some engineered columns are calculated from EDSS, those columns are masked from the EDSS regression head during training, evaluation, and EDSS attribution.
+
+### Federated SVC benchmark
+
+`train_federated_svm.py` follows the linear-SVC benchmark in `evaluate_final_model.py`: it uses the same preprocessing, trains on the combined training and validation cohorts, and evaluates on `data/fp__edss.csv`. Institution clients iteratively exchange support vectors and margin examples until the federated linear SVC converges. The C value is selected using validation accuracy and macro-F1, not test results.
+
+```bash
+python train_federated_svm.py
+```
+
+The reported run selected `C = 10.83` on validation data (accuracy **95.78%**, macro-F1 **0.9531**). It converged after four rounds across four institution clients, using 1,659 training examples and exchanging 481 support-vector/margin examples.
+
+#### Held-out test results
+
+| Metric | Federated linear SVC |
+|:---|---:|
+| Test patients | 415 |
+| Accuracy | **95.66%** |
+| Balanced accuracy | **95.43%** |
+| Macro F1 | **0.9495** |
+| Weighted F1 | **0.9570** |
+| ROC-AUC | **0.9873** |
+
+Per-class results:
+
+| Phenotype | Support | Precision | Recall | F1 |
+|:---|---:|---:|---:|---:|
+| Healthy Control | 104 | 1.0000 | 1.0000 | 1.0000 |
+| RRMS | 233 | 0.9694 | 0.9528 | 0.9610 |
+| Progressive MS | 78 | 0.8659 | 0.9103 | 0.8875 |
+
+Confusion matrix (rows are actual classes; columns are predicted classes, ordered Healthy Control, RRMS, Progressive MS):
+
+|  | Predicted HC | Predicted RRMS | Predicted Progressive MS |
+|:---|---:|---:|---:|
+| Actual HC | 104 | 0 | 0 |
+| Actual RRMS | 0 | 222 | 11 |
+| Actual Progressive MS | 0 | 7 | 71 |
+
+#### Comparison with the reference
+
+| Test accuracy comparison | Accuracy |
+|:---|---:|
+| Federated linear SVC (`C = 10.83`) | **95.66%** |
+| Reference linear SVC (`C = 10.83`) | **95.66%** |
+| Difference | **0.00 percentage points** |
+
+The report records no test-accuracy change versus its reference. This is a matched result, not an accuracy improvement. The report provides the direct reference comparison for accuracy; the additional federated metrics above are reported as standalone results. Full run details are in [`outputs/federated_svm/federated_svm_report.json`](outputs/federated_svm/federated_svm_report.json).
+
+This support-vector exchange is a simulation, not a privacy guarantee; exchanged examples can reveal patient information.
 
 ### Benefits
 
-- **Data locality:** Raw patient records remain within their originating institutions during the federated training process.
+- **Data locality:** In an appropriately deployed federation, raw patient records can remain at their originating institutions; this repository's simulation does not enforce that.
 - **Collaborative learning:** Models can learn from data distributions across participating institutions.
 - **Institutional diversity:** Evaluation across clients can help identify differences caused by patient populations, data quality, or acquisition protocols.
 - **Compatibility with explainability:** Explainability methods can be applied locally to investigate model behavior and compare feature contributions across participating clients.
 
 ### Important Considerations
 
-Federated Learning does not automatically guarantee privacy. Model updates may still leak information, so additional safeguards such as secure aggregation, access controls, and differential privacy may be required.
-
-The federated workflow is an architectural extension unless a working client-server training and aggregation pipeline has been implemented and evaluated. Performance improvements and privacy guarantees must be established experimentally rather than assumed.
+This is a **single-process simulation**, not a production client/server deployment: the coordinator process loads and partitions the CSV, so it does not provide data locality or a privacy guarantee. A real deployment needs institution-local data/preprocessing and transport, plus security controls such as secure aggregation and access controls. FedAvg and FedProx performance must be compared empirically; the code selects by validation macro-F1, never by test results. The feature attributions summarize model sensitivity, not causation or clinical advice.
 
 ## 📁 Repository Directory & Output Files Map
 
@@ -292,6 +368,8 @@ celerious/
 │   ├── predicted_edss_with_hash.csv # FINAL PRODUCTION TEST PREDICTIONS
 │   ├── multi_algorithm_benchmark.json # 5-Fold cross-validation experiment tracking
 │   ├── final_evaluation_report.json # Held-out test evaluation report
+│   ├── federated_svm/
+│   │   └── federated_svm_report.json # Federated linear-SVC results and reference comparison
 │   └── cnn_attention/
 │       └── best_cnn_attention.pt    # PyTorch model checkpoint
 ├── verify_diagram_model.py          # Unit verification script for model architecture

@@ -1,0 +1,153 @@
+{
+  "model": "Federated linear SVC",
+  "reference": "outputs\\final_evaluation_report.json",
+  "reference_model": "SVC(C=10.83, kernel='linear')",
+  "reference_test_accuracy": 0.9566265060240964,
+  "selected_C": 10.83,
+  "validation_selection_metric": "accuracy, then macro-F1",
+  "validation_candidates": [
+    {
+      "C": 3.0,
+      "training": {
+        "clients": 4,
+        "client_samples": [
+          763,
+          307,
+          298,
+          125
+        ],
+        "rounds": 3,
+        "examples_shared": 411,
+        "total_training_examples": 1493,
+        "converged": true,
+        "protocol": "iterative pairwise support-vector and margin exchange"
+      },
+      "validation": {
+        "accuracy": 0.9518072289156626,
+        "balanced_accuracy": 0.9578199578199579,
+        "macro_f1": 0.9469234884965222
+      }
+    },
+    {
+      "C": 10.83,
+      "training": {
+        "clients": 4,
+        "client_samples": [
+          763,
+          307,
+          298,
+          125
+        ],
+        "rounds": 3,
+        "examples_shared": 417,
+        "total_training_examples": 1493,
+        "converged": true,
+        "protocol": "iterative pairwise support-vector and margin exchange"
+      },
+      "validation": {
+        "accuracy": 0.9578313253012049,
+        "balanced_accuracy": 0.9614829614829615,
+        "macro_f1": 0.9531481931287615
+      }
+    },
+    {
+      "C": 30.0,
+      "training": {
+        "clients": 4,
+        "client_samples": [
+          763,
+          307,
+          298,
+          125
+        ],
+        "rounds": 4,
+        "examples_shared": 409,
+        "total_training_examples": 1493,
+        "converged": true,
+        "protocol": "iterative pairwise support-vector and margin exchange"
+      },
+      "validation": {
+        "accuracy": 0.9518072289156626,
+        "balanced_accuracy": 0.9578199578199579,
+        "macro_f1": 0.9469234884965222
+      }
+    }
+  ],
+  "training_data": "data\\train_split.csv",
+  "validation_data": "data\\val_data.csv",
+  "test_data": "data\\fp__edss.csv",
+  "training_recipe": "Same preprocessing, linear SVC objective, and train+validation cohort as evaluate_final_model.py; site clients exchange support vectors and margin examples until the global optimum converges.",
+  "training": {
+    "clients": 4,
+    "client_samples": [
+      851,
+      336,
+      337,
+      135
+    ],
+    "rounds": 4,
+    "examples_shared": 481,
+    "total_training_examples": 1659,
+    "converged": true,
+    "protocol": "iterative pairwise support-vector and margin exchange"
+  },
+  "test_metrics": {
+    "accuracy": 0.9566265060240964,
+    "balanced_accuracy": 0.954348703275742,
+    "macro_f1": 0.9495129870129869,
+    "weighted_f1": 0.9569809106556096,
+    "roc_auc": 0.9873040659709195,
+    "confusion_matrix": [
+      [
+        104,
+        0,
+        0
+      ],
+      [
+        0,
+        222,
+        11
+      ],
+      [
+        0,
+        7,
+        71
+      ]
+    ],
+    "classification_report": {
+      "Healthy Control": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 104.0
+      },
+      "RRMS": {
+        "precision": 0.9694323144104804,
+        "recall": 0.9527896995708155,
+        "f1-score": 0.961038961038961,
+        "support": 233.0
+      },
+      "Progressive MS": {
+        "precision": 0.8658536585365854,
+        "recall": 0.9102564102564102,
+        "f1-score": 0.8875,
+        "support": 78.0
+      },
+      "accuracy": 0.9566265060240964,
+      "macro avg": {
+        "precision": 0.9450953243156887,
+        "recall": 0.954348703275742,
+        "f1-score": 0.9495129870129869,
+        "support": 415.0
+      },
+      "weighted avg": {
+        "precision": 0.9576248545144471,
+        "recall": 0.9566265060240964,
+        "f1-score": 0.9569809106556096,
+        "support": 415.0
+      }
+    }
+  },
+  "accuracy_delta_vs_reference": 0.0,
+  "privacy_note": "This support-vector exchange simulation does not provide formal privacy: exchanged training examples can reveal patient information."
+}
