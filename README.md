@@ -87,7 +87,7 @@ Evaluated on the **415 held-out test patients** (`data/fp__edss.csv`), keeping t
 
 ### 1. Phenotype Subtyping Classification (3-Class Target)
 
-$$\text{Test Accuracy} = \mathbf{95.66\%} \quad \vert \quad \text{Macro F1} = \mathbf{0.9495} \quad \vert \quad \text{ROC-AUC} = \mathbf{0.9885}$$
+$$\text{Test Accuracy} = \mathbf{95.66\%} \quad \vert \quad \text{Macro F1} = \mathbf{0.9495} \quad \vert \quad \text{ROC-AUC} = \mathbf{0.9866}$$
 
 | Disease Phenotype | Test Support | Precision | Recall (Sensitivity) | F1-Score | Clinical Notes |
 |:---|:---:|:---:|:---:|:---:|:---|
@@ -107,6 +107,8 @@ $$\text{Mean Absolute Error (MAE)} = \mathbf{0.0636 \text{ EDSS points}} \quad \
 | **Root Mean Sq Error (RMSE)** | **0.1626** | Tight error bound across extreme disability ranges |
 | **$R^2$ Variance Explained** | **0.9940** | **99.40%** of EDSS variance explained by brain volumetric features |
 | **Pearson Correlation ($r$)** | **0.9971** | Near-perfect linear alignment with ground-truth neurologist EDSS |
+
+The held-out classification and regression metrics above are recorded in [`outputs/final_evaluation_report.json`](outputs/final_evaluation_report.json).
 
 ---
 
@@ -290,7 +292,13 @@ Phenotype and group heads use the same input feature policy as the existing CNN-
 python train_federated_svm.py
 ```
 
-The reported run selected `C = 10.83` on validation data (accuracy **95.78%**, macro-F1 **0.9531**). It converged after four rounds across four institution clients, using 1,659 training examples and exchanging 481 support-vector/margin examples.
+Among the validation candidates, `C = 10.83` performed best: validation accuracy **95.78%**, balanced accuracy **96.15%**, and macro-F1 **0.9531**. This candidate converged in **three rounds**, exchanging 417 examples. The final fit with the selected `C` converged in **four rounds** across four institution clients, using 1,659 training examples and exchanging 481 support-vector/margin examples.
+
+| Validation C | Rounds to converge | Accuracy | Balanced accuracy | Macro F1 |
+|---:|---:|---:|---:|---:|
+| 3.00 | 3 | 95.18% | 95.78% | 0.9469 |
+| **10.83 (selected)** | **3** | **95.78%** | **96.15%** | **0.9531** |
+| 30.00 | 4 | 95.18% | 95.78% | 0.9469 |
 
 #### Held-out test results
 
@@ -327,7 +335,7 @@ Confusion matrix (rows are actual classes; columns are predicted classes, ordere
 | Reference linear SVC (`C = 10.83`) | **95.66%** |
 | Difference | **0.00 percentage points** |
 
-The report records no test-accuracy change versus its reference. This is a matched result, not an accuracy improvement. The report provides the direct reference comparison for accuracy; the additional federated metrics above are reported as standalone results. Full run details are in [`outputs/federated_svm/federated_svm_report.json`](outputs/federated_svm/federated_svm_report.json).
+The report records no test-accuracy change versus its reference. This is a matched result, not an accuracy improvement. The report provides the direct reference comparison for accuracy; the additional federated metrics above are reported as standalone results. Full validation candidates, final training details, test metrics, and reference comparison are in [`outputs/federated_svm/federated_svm_report.json`](outputs/federated_svm/federated_svm_report.json).
 
 This support-vector exchange is a simulation, not a privacy guarantee; exchanged examples can reveal patient information.
 
